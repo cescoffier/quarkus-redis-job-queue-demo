@@ -1,0 +1,146 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+
+    <link href="https://fonts.cdnfonts.com/css/bangers" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/materialize/1.0.0/css/materialize.min.css">
+
+    <style>
+        .title {
+            font-family: 'Bangers', sans-serif;
+        }
+
+        .supes-name {
+            font-family: 'Bangers', sans-serif;
+            text-align: center;
+            font-size: large;
+        }
+
+        .supes-pic {
+            width: 200px;
+            height: 200px;
+        }
+    </style>
+
+    <title>Quarkus Redis Demo</title>
+
+    <style>
+
+        .bang {
+            font-family: 'Bangers', cursive;
+        }
+
+        button.bang {
+            font-size: xx-large;
+        }
+
+        figure.winner img.hero {
+            box-shadow: inset 0 0 5px #fff,
+            inset 20px 0 25px #77b4f0,
+            inset -20px 0 30px #5fc3d7,
+            inset 20px 0 50px #4a54ff,
+            inset -20px 0 50px #0ff,
+            0 0 25px #fff,
+            -10px 0 25px #4a54ff,
+            10px 0 25px #0ff;
+        }
+
+        figure.winner img.villain  {
+            box-shadow: inset 0 0 5px #fff,
+            inset 20px 0 25px #F078C2,
+            inset -20px 0 30px #D73B46,
+            inset 20px 0 50px #FF5B68,
+            inset -20px 0 50px #FF5A71,
+            0 0 25px #fff,
+            -10px 0 25px #FF5B68,
+            10px 0 25px #FF5B68;
+        }
+    </style>
+
+    <link href="https://fonts.googleapis.com/css2?family=Bangers&display=swap" rel="stylesheet">
+</head>
+<body>
+
+<div class="container main">
+    <div class="row">
+        <div class="col s12">
+            <h1 class="title header center pink-text darken-4-text">Heroes!</h1>
+        </div>
+    </div>
+
+    <div id="button-row" class="row center-align">
+        <div class="col s12 center-align">
+            <button id="fight-button" class="bang btn btn-dark btn-lg">fight!</button>
+        </div>
+    </div>
+
+    <div id="resp">
+
+    </div>
+</div>
+
+
+</body>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/materialize/1.0.0/js/materialize.min.js"></script>
+<script>
+    (function () {
+        const sse = new EventSource("/supes");
+        sse.onmessage = (event) => {
+            const res = JSON.parse(event.data);
+
+            console.log(res);
+            const fightId = res.id;
+            const line = document.querySelector(`div[data-fight-request-id="${fightId}"]`);
+            if (line) {
+                const  winner = line.querySelector(`figure[data-name="${res.winner}"]`);
+                if (winner) {
+                    winner.classList.add("winner");
+                } else {
+                    console.log("No figure with data-name=" + res.winner);
+                }
+            } else {
+                console.log("no line with data-fight-request-id=" + fightId);
+            }
+        }
+
+        document.getElementById("fight-button").onclick = triggerAFight;
+    })();
+
+    function prependFightRequest(fightRequest) {
+        const resp = document.getElementById("resp");
+        const line = document.createElement("div");
+        line.classList.add("row")
+        line.setAttribute("data-fight-request-id", fightRequest.id);
+
+        const cellFighter1 = document.createElement("div");
+        const cellFighter2 = document.createElement("div");
+        const spacer = document.createElement("div");
+        cellFighter1.classList.add("col", "s5", "center-align");
+        cellFighter1.innerHTML = `<figure data-name="${fightRequest.hero.name}"><img src="${fightRequest.hero.picture}" class="hero circle supes-pic"><figcaption class="supes-name">${fightRequest.hero.name}</figcaption></figure>`;
+        spacer.classList.add("col", "s2");
+        cellFighter2.classList.add("col", "s5", "center-align");
+        cellFighter2.innerHTML = `<figure data-name="${fightRequest.villain.name}"><img src="${fightRequest.villain.picture}" class="villain circle supes-pic"><figcaption class="supes-name">${fightRequest.villain.name}</figcaption></figure>`;
+
+        line.append(cellFighter1);
+        line.append(spacer);
+        line.append(cellFighter2);
+        resp.prepend(line);
+    }
+
+    function triggerAFight() {
+        const button = document.getElementById("fight-button");
+        button.disabled = true;
+        fetch('/supes', {
+            method: 'POST'
+        })
+            .then((response) => response.json())
+            .then((data) => {
+                prependFightRequest(data);
+                button.disabled = false
+            });
+    }
+</script>
+</html>
